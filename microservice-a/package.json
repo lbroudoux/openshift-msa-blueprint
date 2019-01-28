@@ -1,0 +1,84 @@
+{
+  "name": "microservice-a",
+  "version": "1.0.0",
+  "description": "This project demonstrates application and runtime configuration leveraging external configuration sources",
+  "author": "Laurent Broudoux",
+  "license": "Apache-2.0",
+  "scripts": {
+    "test": "tape test/*.js | tap-spec",
+    "lint": "xo",
+    "prepare": "echo 'To confirm CVE compliance, run \"npm run security-check\"' ",
+    "security-check": "nsp check",
+    "coverage": "nyc npm test",
+    "coverage:html": "nyc npm test && nyc report --reporter=html",
+    "coveralls": "nyc npm test && nyc report --reporter=text-lcov | coveralls",
+    "ci": "npm run lint && npm run coveralls",
+    "dependencyCheck": "szero . --ci",
+    "release": "standard-version -a",
+    "openshift": "nodeshift --strictSSL=false --nodeVersion=10.x",
+    "start": "node server.js"
+  },
+  "main": "server.js",
+  "standard-version": {
+    "scripts": {
+      "postbump": "npm run postinstall && node release.js",
+      "precommit": "git add .openshiftio/application.yaml licenses/"
+    }
+  },
+  "xo": {
+    "space": 2,
+    "rules": {
+      "space-before-function-paren": [
+        "error",
+        "always"
+      ],
+      "prefer-destructuring": [
+        "off"
+      ]
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lbroudoux/openshift-msa-blueprint.git"
+  },
+  "files": [
+    "package.json",
+    "app.js",
+    "server.js",
+    "public",
+    "bin",
+    "LICENSE"
+  ],
+  "bugs": {
+    "url": "https://github.com/lbroudoux/openshift-msa-blueprint/issues"
+  },
+  "homepage": "https://github.com/lbroudoux/openshift-msa-blueprint",
+  "devDependencies": {
+    "coveralls": "^3.0.0",
+    "nodeshift": "~2.0.0",
+    "nsp": "~3.2.1",
+    "nyc": "~12.0.2",
+    "proxyquire": "^2.0.0",
+    "sinon": "^6.0.0",
+    "standard-version": "^4.3.0",
+    "supertest": "^3.0.0",
+    "szero": "^1.0.0",
+    "tap-spec": "~5.0.0",
+    "tape": "~4.9.0",
+    "xo": "~0.22.0"
+  },
+  "dependencies": {
+    "async": "^2.6.1",
+    "body-parser": "^1.18.2",
+    "debug": "^4.0.1",
+    "esm": "^3.1.2",
+    "express": "4.16.0",
+    "express-opentracing": "^0.1.1",
+    "express-prom-bundle": "^5.0.2",
+    "jaeger-client": "^3.10.0",
+    "js-yaml": "^3.10.0",
+    "kube-probe": "^0.3.1",
+    "prom-client": "^11.2.1",
+    "winston": "~2.4.4"
+  }
+}
