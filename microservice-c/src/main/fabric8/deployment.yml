@@ -1,0 +1,45 @@
+spec:
+  template:
+    spec:
+      containers:
+        - 
+          resources:
+            requests:
+              cpu: "0.2"
+              memory: 512Mi
+            limits:
+              cpu: "1.0"
+              memory: 512Mi
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /health
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            successThreshold: 1
+            timeoutSeconds: 3
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /health
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            successThreshold: 1
+            timeoutSeconds: 3
+          volumeMounts:
+            - name: config
+              mountPath: /app/config
+          env:
+            - name: JAVA_OPTIONS
+              value: "-Dswarm.project.stage.file=file:///app/config/project-defaults.yml"
+      volumes:
+        - configMap:
+            name: microservice-c-config
+            items:
+            - key: "app-config.yml"
+              path: "project-defaults.yml"
+          name: config

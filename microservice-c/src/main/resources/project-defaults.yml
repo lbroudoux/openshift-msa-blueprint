@@ -1,0 +1,18 @@
+# Global application settings.
+swarm:
+  logging: INFO
+
+# If OpenShift ConfigMap wasn't deployed and application is running locally, we can set greeting.message here.
+greeting:
+  message: Hello %s from a ConfigMap!
+
+# OpenTracing configuration
+thorntail:
+  jaeger:
+    enabled: false
+    service-name: microservice-c
+    sampler-type: const
+    sampler-parameter: 1
+    #enable-b3-header-propagation: false
+    remote-reporter-http-endpoint: 'http://localhost:14268/api/traces'
+    reporter-log-spans: true

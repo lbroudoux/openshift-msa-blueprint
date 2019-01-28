@@ -1,0 +1,13 @@
+greeting:
+  message: Hello %s from a ConfigMap!
+
+# OpenTracing configuration
+thorntail:
+  jaeger:
+    service-name: microservice-c
+    sampler-type: const
+    sampler-parameter: 1
+    enable-b3-header-propagation: true
+    udp-sender:
+      host: "jaegerhost"
+      port: 5775
