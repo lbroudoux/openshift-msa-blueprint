@@ -1,0 +1,36 @@
+spec:
+  template:
+    spec:
+      # Declare a volume mounting the config map
+      volumes:
+        - configMap:
+            # Name of the config map
+            name: microservice-a-config
+            optional: true
+            # Define the items from the config map to mount
+            items:
+            - key: app-config.yml
+              path: app-config.yml
+            # Volume name (used as reference below)
+          name: config
+      containers:
+        - env:
+            - name: NODE_CONFIGMAP_PATH
+              value: /app/config/app-config.yml
+            - name: LOG_SPANS
+              value: true
+          readinessProbe:
+            httpGet:
+              path: /api/health/readiness
+              port: 8080
+              scheme: HTTP
+          livenessProbe:
+            httpGet:
+              path: /api/health/liveness
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          volumeMounts:
+          - mountPath: /app/config
+            name: config
