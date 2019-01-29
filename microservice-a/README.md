@@ -78,7 +78,28 @@ $ curl http://microservice-a-MY_PROJECT_NAME.LOCAL_OPENSHIFT_HOSTNAME/api/greeti
 
 ### Externalized configuration
 
-`.nodeshift/deployment.yml`
+Configuration of application is externalized into a file called `app-config.yml`. When deployed locally, this file is read from application root folder. When deployed into OpenShift, this file is used as a source for a `ConfigMap`.
+
+So basically, application should read this file at startup or repeatedly and  `app.js` file may be adapted that way:
+
+```js
+setInterval(() => {
+  retrieveConfigfMap().then(config => {
+    [...]
+}, 2000);
+```
+
+The `retrieveConfigMap()` function is a little indirection that is using a file specified as the `NODE_CONFIGMAP_PATH` environment variable in priority ; or fallback to local `app-config.yml`:
+
+```js
+function retrieveConfigfMap () {
+  return readFile(process.env.NODE_CONFIGMAP_PATH || 'app-config.yml', {encoding: 'utf8'}).then(configMap => {
+    [...]
+  });
+}
+```
+
+The `nodeshift` utility we use for deploying onto OpenShift allows us to configure the binding of a declared `ConfigMap` to our containerized application. This is done by providing Kubernetes manifest fragments into the `.nodeshift/deployment.yml` file. Below we can see that the `microservice-a-config` `ConfigMap` is mounted into container and referenced into the `NODE_CONFIGMAP_PATH`:
 
 ```yaml
 spec:
@@ -100,13 +121,14 @@ spec:
         - env:
             - name: NODE_CONFIGMAP_PATH
               value: /app/config/app-config.yml
-            - name: LOG_SPANS
-              value: true
+          volumeMounts:
+          - mountPath: /app/config
+            name: config
 ```
 
 ### Health probes
 
-`app.js`
+In order to provide health scanning probes, we use the [kube-probe](https://www.npmjs.com/package/kube-probe) module. `app.js` is just modified to add probe for the application:
 
 ```js
 const probe = require('kube-probe');
@@ -116,9 +138,26 @@ const probe = require('kube-probe');
 probe(app);
 ```
 
+Whilst the module auto-exposes 2 new endpoints for probes, those have to be declared as fragments into the `.nodeshift/deployment.yml` file:
+
+```yaml
+readinessProbe:
+  httpGet:
+    path: /api/health/readiness
+    port: 8080
+    scheme: HTTP
+livenessProbe:
+  httpGet:
+    path: /api/health/liveness
+    port: 8080
+    scheme: HTTP
+  initialDelaySeconds: 60
+  periodSeconds: 30
+```
+
 ### Distributed tracing
 
-`app.js`
+OpenTracing can be implemented using [express-opentracing](https://www.npmjs.com/package/express-opentracing) module. `app.js` is modified that way to enable the tracer client baked by Jaeger implementation:
 
 ```js
 var opentracingMiddleware = require('express-opentracing').default;
@@ -141,13 +180,21 @@ var jaegerTracer = initTracer(config, options);
 app.use("/api/((?!health))*", opentracingMiddleware({tracer: jaegerTracer}))
 ```
 
+You may have checked in the configuration that it relies onto a `JAEGER_HOST` environment variable for getting the name of the Jaeger service. So you may export a simple env variable when deploying in local:
+
+```
+$ export JAEGER_HOST=localhost
+```
+
+or setup a container environment variable when deployed onto OpenShift:
+
 ```
 $ oc set env dc/microservice-a JAEGER_HOST=jaeger-agent.cockpit.svc.cluster.local
 ```
 
 ### Prometheus metrics
 
-`app.js`
+Pormetheus metrics are brought by the excellent [express-prom-bundle](https://www.npmjs.com/package/express-prom-bundle) module. Integrating it as a middleware for Express, is as easy as adding those few lines into `app.js`:
 
 ```js
 const promBundle = require("express-prom-bundle");
@@ -155,7 +202,9 @@ const metricsMiddleware = promBundle({includeMethod: true, includePath: true});
 app.use(metricsMiddleware);
 ```
 
-`.nodeshift/service.yml`
+This will bring you automatic metrics for your Express routes. You can check the metrics availables by calling `http://localhost:8080/metrics` endpoint.
+
+When using a Prometheus instance deployed on OpenShift or other Kubernetes instance, you may have default configuration that expect your Prometheus metrics to be exposed onto port `9779`. As this is not our configuration, we have to tell it explicitily by using annotations on the OpenShift `Service`. This can be done providing the following fragment into `.nodeshift/service.yml` file:
 
 ```yaml
 metadata:

@@ -83,11 +83,15 @@ $ mvn spring-boot:run -Dspring-boot.run.jvmArguments="-Xdebug -Xrunjdwp:transpor
 
 ### Externalized configuration
 
-`src/main/resources/bootstrap.properties`
+Externalized configuration into this microservice is provided through the help of `spring-cloud-kubernetes-config` library. The behavior of this library is to use Kubernetes APIs to check for an existing `ConfigMap` in order to retrieve application properties.
+
+So basically, you just have to give a ConfigMap name into `src/main/resources/bootstrap.properties` like this:
 
 ```yaml
 spring.cloud.kubernetes.config.name=microservice-b-config
 ```
+
+and at startup, it takes care of checking if there's such a `ConfigMap` into the Kubernetes namespaces the user is currently logged in.
 
 ### Health probes
 
