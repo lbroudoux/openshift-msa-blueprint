@@ -76,6 +76,21 @@ $ curl http://microservice-a-MY_PROJECT_NAME.LOCAL_OPENSHIFT_HOSTNAME/api/greeti
 
 ## Development notes
 
+### Service Discovery
+
+Getting the other microservice URL is straightforward into OpenShift because of the SDN layer. When `microservice-a` wants to join `microservice-b` it does not to call an external registry managing this. If both services are deployed into the same namespace, they can directly use their short name as a DNS alias.
+
+That way, when you are looking at `app.js` invocation code, you'll just see references of `microservice-b` as hostname with its default `Service` port.
+
+```js
+var req = http.request({
+  hostname: "microservice-b", port: 8080,
+  path: '/api/greeting', method: 'GET', headers: headers
+}
+```
+
+> HINT: If you're deploying locally, you may just have to replace `microservice-b` with `localhost` and `8080` with the port you have choosen for the component. See other microservices documentation for how to configure and override their port.
+
 ### Externalized configuration
 
 Configuration of application is externalized into a file called `app-config.yml`. When deployed locally, this file is read from application root folder. When deployed into OpenShift, this file is used as a source for a `ConfigMap`.

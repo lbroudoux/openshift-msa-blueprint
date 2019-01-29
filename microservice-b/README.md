@@ -15,6 +15,12 @@ $ cd microservice-b
 $ mvn spring-boot:run
 ```
 
+If you have already launched some other services of this application locally, you'll need changing the default port like in command below:
+
+```
+ $ mvn spring-boot:run -Dserver.port=8090
+```
+
 ### Testing it
 
 To interact with your booster while its running, use the form at `http://localhost:8080` or the `curl` command:
@@ -95,7 +101,9 @@ and at startup, it takes care of checking if there's such a `ConfigMap` into the
 
 ### Health probes
 
-`application.yml`
+Health probes in Spring Boot 2 applications can be added by including the `spring-boot-starter-actuator` dependency. Actuator is now using Micrometer as a base framework and it will also used when dealing with Prometheus metrics.
+
+Including the dependency is not enough and you should also adapt the `application.yml` configuration file to enable exposing the different management endpoints offered by Actuator like below:
 
 ```yaml
 management:
@@ -105,7 +113,9 @@ management:
         include: "*"
 ```
 
-`src/main/fabric8/deployment.yml`
+> IMPORTANT: As including any endpoints maybe convenient for our purposes, this is clearly not a production settings. Endpoints should be restricted and protected.
+
+dding this dependency automatically add new endpoints on `/actuator/health` for defining a liveness and a readiness probes. However, this endpoints should be also declared to OpenShift using the `src/main/fabric8/deployment.yml` fragment:
 
 ```yaml
 livenessProbe:
@@ -118,11 +128,15 @@ livenessProbe:
   periodSeconds: 10
   successThreshold: 1
   timeoutSeconds: 3
+readinessProbe:
+  [...]
 ```
 
 ### Distributed tracing
 
-`application.yml`
+The `opentracing-spring-jaeger-cloud-starter` dependency is necessary for having OpenTracing support through the Jaeger implementation. Once this dependency is added to your Maven pom.xml, all the Web Servlet endpoints will be instrumented for detecting / creating / closing traces span. Our `GreetingController` beng a Spring MVC controller, it falls within this instrumentation.
+
+The `ConfigMap` configuration file `application.yml` (or its local variant `application-local.yml` if you make local tests) should be adapted to add configuration for the Jaeger tracer and how to reach the central collector:
 
 ```yaml
 opentracing:
@@ -135,9 +149,21 @@ opentracing:
       port: 5775
 ```
 
+Remember that in the Introduction - Supporting tools installation section - I've mentionned installing Jaeger server into the `cockpit` namespace and making this namespace a global one. So that, I'm no able to reach OpenShift Service in that namespace just by using `jaeger-agent.cockpit.svc.cluster.local` DNS alias.
+
+If you want to test or debug OpenTracing instrumentation locally, you can also choose to deploy Jaeger locally using the Docker image. Just execute:
+
+```
+$ docker run -it --rm -p 6831:6831/udp -p 6832:6832/udp -p 5775:5775/udp -p 14268:14268 -p 16686:16686 jaegertracing/all-in-one
+```
+
+Jaeger GUI will be available on `http://localhost:16686`.
+
 ### Prometheus metrics
 
-`application.yml`
+Application metrics gathering is included into `spring-boot-starter-actuator` but we need another dependency to have Prometheus format export available. So just add `micrometer-registry-prometheus` dependency to your pom.xml and a new endpoint will be available at `/actuator/prometheus` to make your metrics available at Prometheus text format.
+
+We'll need also to activate the Prometheus endpoint into the `application.yml` configuration file used as our `ConfigMap` source:
 
 ```yaml
 management:
@@ -153,7 +179,7 @@ management:
         enabled: true
 ```
 
-`src/main/fabric8/service.yml`
+When using a Prometheus instance deployed on OpenShift or other Kubernetes instance, you may have default configuration that expect your Prometheus metrics to be exposed onto port `9779` and on `/metrics` endpoint. As this is not our configuration, we have to tell it explicitily by using annotations on the OpenShift `Service`. This can be done providing the following fragment into `src/main/fabric8/service.yml` file:
 
 ```yaml
 metadata:
@@ -162,6 +188,9 @@ metadata:
     prometheus.io/port: '8080'
     prometheus.io/scrape: 'true'
 ```
+
+> NOTE: Micrometer should also allow instrumentation of arbitrary methods using @Timed annotation. Instrumentation of Spring Beans is not done by default so that you'll have to add a `TimedConfiguration` that uses AspectJ weaving. Tried this setup but did not succeed for now....
+
 
 ## More Information
 

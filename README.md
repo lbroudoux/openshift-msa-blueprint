@@ -3,6 +3,7 @@
 Microservices architecture blueprint on OpenShift. This repository holds a simple microservices application written using Node.js, Spring Boot 2.x and Thorntail 2.x frameworks and runtime.
 
 Its goals are to demonstrate some crucial concerns of containerized microservices architecture and how they may be implemented using modern frameworks and support libraries. Such concerns include:
+* **Services Discovery**: How to retrieve an other service URL / IP / Hostname in order to invoke it?
 * **Configuration Management**: How to manage application configuration with immutable container images? How to use Kubernetes container-native concepts?
 * **Resilience and Fault Tolerance**: How to inform outer world of the application health? How to integrate probes with Kubernetes orchestrator?
 * **Distributed Tracing**: How to trace services and APIs calls in a highly distributed environment? How to analyse stuffs?
