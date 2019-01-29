@@ -73,15 +73,90 @@ $ curl http://microservice-c-MY_PROJECT_NAME.LOCAL_OPENSHIFT_HOSTNAME/api/greeti
 
 ### Debugging it
 
+```
+$ mvn thorntail:run -Dswarm.debug.port=5006
+```
+
+```
+$ mvn thorntail:run -Dswarm.port.offset=1 -Dswarm.debug.port=5006 -DskipTests
+```
+
 ## Development notes
 
 ### Externalized configuration
 
+`src/main/fabric8/deployment.yml`
+
+```yaml
+spec:
+  template:
+    spec:
+      containers:
+        -
+          [...]
+          volumeMounts:
+            - name: config
+              mountPath: /app/config
+          env:
+            - name: JAVA_OPTIONS
+              value: "-Dswarm.project.stage.file=file:///app/config/project-defaults.yml"
+          volumes:
+          - configMap:
+            name: microservice-c-config
+            items:
+            - key: "app-config.yml"
+              path: "project-defaults.yml"
+            name: config
+```
+
 ### Health probes
+
+`src/main/fabric8/deployment.yml`
+
+```yaml
+spec:
+  template:
+    spec:
+      containers:
+        -
+          [...]
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /health
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            successThreshold: 1
+            timeoutSeconds: 3
+```
 
 ### Distributed tracing
 
+`app-config.yml`
+
+```yaml
+thorntail:
+  jaeger:
+    enabled: true
+    service-name: microservice-c
+    sampler-type: const
+    sampler-parameter: 1
+    remote-reporter-http-endpoint: 'http://jaeger-agent.cockpit.svc.cluster.local:14268/api/traces'
+    reporter-log-spans: true
+```
+
 ### Prometheus metrics
+
+`src/main/fabric8/service.yml`
+
+```yaml
+metadata:
+  annotations:
+    prometheus.io/port: '8080'
+    prometheus.io/scrape: 'true'
+```
 
 ## More Information
 

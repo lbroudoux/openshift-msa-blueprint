@@ -78,11 +78,91 @@ $ curl http://microservice-a-MY_PROJECT_NAME.LOCAL_OPENSHIFT_HOSTNAME/api/greeti
 
 ### Externalized configuration
 
+`.nodeshift/deployment.yml`
+
+```yaml
+spec:
+  template:
+    spec:
+      # Declare a volume mounting the config map
+      volumes:
+        - configMap:
+            # Name of the config map
+            name: microservice-a-config
+            optional: true
+            # Define the items from the config map to mount
+            items:
+            - key: app-config.yml
+              path: app-config.yml
+            # Volume name (used as reference below)
+          name: config
+      containers:
+        - env:
+            - name: NODE_CONFIGMAP_PATH
+              value: /app/config/app-config.yml
+            - name: LOG_SPANS
+              value: true
+```
+
 ### Health probes
+
+`app.js`
+
+```js
+const probe = require('kube-probe');
+
+[...]
+
+probe(app);
+```
 
 ### Distributed tracing
 
+`app.js`
+
+```js
+var opentracingMiddleware = require('express-opentracing').default;
+var initTracer = require('jaeger-client').initTracer;
+
+var config = {
+  'serviceName': 'microservice-a',
+  'reporter': {
+    'logSpans': process.env.LOG_SPANS || true,
+    'agentHost': process.env.JAEGER_HOST,
+    'agentPort': 6832
+  },
+  'sampler': { 'type': 'const', 'param': 1 }
+};
+var options = {
+  'tags': { 'microservice-a': '1.0.0' },
+  'logger': logger
+};
+var jaegerTracer = initTracer(config, options);
+app.use("/api/((?!health))*", opentracingMiddleware({tracer: jaegerTracer}))
+```
+
+```
+$ oc set env dc/microservice-a JAEGER_HOST=jaeger-agent.cockpit.svc.cluster.local
+```
+
 ### Prometheus metrics
+
+`app.js`
+
+```js
+const promBundle = require("express-prom-bundle");
+const metricsMiddleware = promBundle({includeMethod: true, includePath: true});
+app.use(metricsMiddleware);
+```
+
+`.nodeshift/service.yml`
+
+```yaml
+metadata:
+  annotations:
+    prometheus.io/port: '8080'
+    prometheus.io/scrape: 'true'
+```
 
 ## More Information
 

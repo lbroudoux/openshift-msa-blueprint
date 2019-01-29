@@ -75,15 +75,89 @@ $ curl http://microservice-b-MY_PROJECT_NAME.LOCAL_OPENSHIFT_HOSTNAME/api/greeti
 
 ### Debugging it
 
+```
+$ mvn spring-boot:run -Dspring-boot.run.jvmArguments="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005"
+```
+
 ## Development notes
 
 ### Externalized configuration
 
+`src/main/resources/bootstrap.properties`
+
+```yaml
+spring.cloud.kubernetes.config.name=microservice-b-config
+```
+
 ### Health probes
+
+`application.yml`
+
+```yaml
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+```
+
+`src/main/fabric8/deployment.yml`
+
+```yaml
+livenessProbe:
+  failureThreshold: 3
+  httpGet:
+    path: /actuator/health
+    port: 8080
+    scheme: HTTP
+  initialDelaySeconds: 15
+  periodSeconds: 10
+  successThreshold: 1
+  timeoutSeconds: 3
+```
 
 ### Distributed tracing
 
+`application.yml`
+
+```yaml
+opentracing:
+  jaeger:
+    enabled: true
+    log-spans: true
+    enable-b3-propagation: false
+    udp-sender:
+      host: "jaeger-agent.cockpit.svc.cluster.local"
+      port: 5775
+```
+
 ### Prometheus metrics
+
+`application.yml`
+
+```yaml
+management:
+  [...]
+  endpoint:
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+```
+
+`src/main/fabric8/service.yml`
+
+```yaml
+metadata:
+  annotations:
+    prometheus.io/path: /actuator/prometheus
+    prometheus.io/port: '8080'
+    prometheus.io/scrape: 'true'
+```
 
 ## More Information
 
