@@ -1,6 +1,6 @@
 # This properties file should be used to initialise a ConfigMap
 greeting:
-  message: "Hello %s from a ConfigMap!"
+  message: "Bonjour %s from a ConfigMap!"
 
 # Metrics related configurations
 management:
@@ -27,4 +27,3 @@ opentracing:
     udp-sender:
       host: "jaegerhost"
       port: 5775
-

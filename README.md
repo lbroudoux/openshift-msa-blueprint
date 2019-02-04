@@ -49,7 +49,7 @@ We'll also deploy this application with custom metrics supports so that each mic
 
 To get the full features activated, we recommend installing Prometheus, Grafana and Jaeger onto your OpenShift environment. By default, I like to install everything into a separate `cockpit` OpenShift project that I make global in order to allow microservices components to push data to Jaeger.
 
-Here's the commands I'm using:
+Here are the commands I'm using:
 
 ```
 $ oc new-project cockpit --display-name="Cockpit"
@@ -61,6 +61,8 @@ If you're using something like Minishift or the CDK (Container Development Kit),
 If you're using a full blown OpenShift cluster, I recommend installing both tools the standard way, reusing the provided Ansible playbooks (provided into
 `/usr/share/ansible/openshift-ansible/playbooks/openshift_prometheus` and
 `/usr/share/ansible/openshift-ansible/playbooks/openshift_grafana`).
+
+Finally, the Grafana dashboard for the application that you've seen above is available [here](./grafana-dashboard.json) and can be easily imported into your instance.
 
 Jaeger can be simply installed using the following command:
 

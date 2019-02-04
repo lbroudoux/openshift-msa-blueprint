@@ -130,6 +130,7 @@
           {
             "expr": "http_request_duration_seconds_count{status_code=\"200\",method=\"GET\",path=\"/api/greeting\"}",
             "format": "time_series",
+            "instant": true,
             "intervalFactor": 1,
             "refId": "A"
           }
@@ -210,6 +211,7 @@
           {
             "expr": "http_server_requests_seconds_count{exception=\"None\",method=\"GET\",outcome=\"SUCCESS\",status=\"200\",uri=\"/api/greeting\",}",
             "format": "time_series",
+            "instant": true,
             "intervalFactor": 1,
             "refId": "A"
           }
@@ -290,6 +292,7 @@
           {
             "expr": "application:greeting_count",
             "format": "time_series",
+            "instant": true,
             "intervalFactor": 1,
             "refId": "A"
           }

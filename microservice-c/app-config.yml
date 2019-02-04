@@ -1,5 +1,5 @@
 greeting:
-  message: Hello %s from a ConfigMap!
+  message: Hola %s from a ConfigMap!
 
 # OpenTracing configuration
 thorntail:
