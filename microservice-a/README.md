@@ -47,7 +47,7 @@ $ oc new-project MY_PROJECT_NAME
 * Create a `ConfigMap` configuration using `app-config.yml`
 
 ```
-$ oc create configmap app-config --from-file=app-config.yml
+$ oc create configmap microservice-a-config --from-file=app-config.yml
 ```
 
 * Deploy your microservice on OpenShift using Source-to-image (S2I) build
